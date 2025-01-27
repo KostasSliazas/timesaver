@@ -189,7 +189,11 @@ clear_screen() {
   clear                                     # Clear the terminal screen
   echo -e "${GREEN}Screen cleared!${RESET}" # Final message in green
 }
-
+# Check if dialog is installed
+if ! command -v dialog &>/dev/null; then
+  log "Installing dialog for the interactive menu..."
+  sudo apt install -y dialog
+fi
 # Function to disable a service with error checking
 disable_service() {
   local service_name="$1"
@@ -450,16 +454,9 @@ disable_all_services() {
   done
 }
 
-clear_screen
+# clear_screen
 update_upgrade
 install_kubuntu_extras
-
-# Check if dialog is installed
-if ! command -v dialog &>/dev/null; then
-  log "Installing dialog for the interactive menu..."
-  sudo apt install -y dialog
-fi
-
 install_packages
 clean_packages
 configure_firewall
