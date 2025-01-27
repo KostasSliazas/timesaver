@@ -440,11 +440,21 @@ check_firewall_status() {
 
 # Main function to apply all firewall settings
 configure_firewall() {
-  allow_http
-  allow_https
-  enable_firewall
-  set_default_policies
-  check_firewall_status
+  # Ask user if they want to activate the firewall
+  dialog --title "Firewall Configuration" --yesno "Do you want to activate the firewall?" 7 60
+  response=$?
+
+  if [ $response -eq 0 ]; then
+    log "Activating firewall..."
+    allow_http
+    allow_https
+    enable_firewall
+    set_default_policies
+    check_firewall_status
+  else
+    log "Firewall activation skipped."
+  fi
+
 }
 
 # Loop through and disable each service
