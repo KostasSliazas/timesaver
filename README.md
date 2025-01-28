@@ -12,7 +12,7 @@ First, download the script to your computer. You can do this by either:
 - **Using `wget`**: If you prefer using the terminal:
 
     ```bash
-    wget https://github.com/KostasSliazas/timesaver/blob/main/install-kubuntu-extras.sh
+    wget https://raw.githubusercontent.com/KostasSliazas/timesaver/main/install-kubuntu-extras.sh
     ```
 
 ### 2. **Set Permissions**
