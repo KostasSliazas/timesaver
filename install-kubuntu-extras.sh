@@ -1,64 +1,72 @@
 #!/bin/bash
 
-# Exit immediately if a command fails
-set -e
-# set -x
-# Global COLORS VARIABLES
-RED="\e[31m"
+set -e # Exit on error
+
+# Color Definitions
 GREEN="\e[32m"
 YELLOW="\e[33m"
-BLUE="\e[34m"
-MAGENTA="\e[35m"
-CYAN="\e[36m"
+RED="\e[31m"
 RESET="\e[0m"
 
-# Display welcome message
-echo -e "\n${CYAN}==============================="
-echo " CUTE Kubuntu Extras Installer "
-echo -e "===============================${RESET}"
+# Log File
+LOGFILE="/var/log/system_utility.log"
 
-# Define a global list of apps to be installed
-declare -a apps=(
-  "vlc"
-  "gimp"
-  "htop"
-  "inkscape"
-  "firefox"
-  "curl"
-  "git"
-  "ufw"
-  "kget"
-  "strawberry"
-  "gnome-disk-utility"
-  "trimage"
-  "xdm"
-  "krita"
-  "darktable"
-  "stacer"
-  "chromium"
-  "transmission-cli"
-  "clamav"
-  "wget"
+# VS Code Extension Retry Config
+MAX_RETRIES=3
+RETRY_DELAY=3
+
+# VS Code Extension examples
+extensions=(
+  "ms-python.python"
+  "abusaidm.html-snippets"
+  "afractal.node-essentials"
+  "anseki.vscode-color"
+  "bmewburn.vscode-intelephense-client"
+  "capaj.vscode-standardjs-snippets"
+  "chenxsan.vscode-standardjs"
+  "cobeia.airbnb-react-snippets"
+  "glen-84.sass-lint"      # Replacement for adamwalzer.scss-lint
+  "esbenp.prettier-vscode" # Replacement for HookyQR.beautify
+  "olback.es6-css-minify"
+  "jasonnutter.search-node-modules"
+  "miguel-colmenares.css-js-minifier" # Replacement for justinlampe.js-minifier-with-closure
+  "kokororin.vscode-phpfmt"
+  "leizongmin.node-module-intellisense"
+  "mgmcdermott.vscode-language-babel"
+  "mikestead.dotenv"
+  "mkaufman.HTMLHint"
+  "mohd-akram.vscode-html-format"
+  "ms-kubernetes-tools.vscode-kubernetes-tools"
+  "ms-vsliveshare.vsliveshare"
+  "p42ai.refactor"
+  "pflannery.vscode-versionlens"
+  "pranaygp.vscode-css-peek"
+  "redhat.fabric8-analytics"
+  "redhat.vscode-commons"
+  "redhat.vscode-yaml"
+  "glenn2223.live-sass" # Replacement for ritwickdey.live-sass
+  "ritwickdey.LiveServer"
+  "roerohan.mongo-snippets-for-node-js"
+  "sburg.vscode-javascript-booster"
+  "sidthesloth.html5-boilerplate"
+  "stevencl.addDocComments"
+  "streetsidesoftware.code-spell-checker"
+  "stylelint.vscode-stylelint"
+  "Swellaby.node-pack"
+  "syler.sass-indented"
+  "dsznajder.es7-react-js-snippets" # Replacement for xabikos.JavaScriptSnippets
+  "thekalinga.bootstrap4-vscode"
+  "Tobermory.es6-string-html"
+  "VisualStudioExptTeam.vscodeintellicode"
+  "waderyan.nodejs-extension-pack"
+  "WallabyJs.quokka-vscode"
+  "wix.vscode-import-cost"
+  "Wscats.eno"
+  "Equinusocio.vsc-material-theme" # Replacement for zhuangtongfa.material-theme
+  "ecmel.vscode-html-css"          # Replacement for Zignd.html-css-class-completion
 )
 
-# Global constant for countdown time
-COUNTDOWN_TIME=3
-
-# Define a list of services to disable
-services_to_disable=(
-  "rsyslog"
-  "systemd-journald"
-  "bluetooth"
-  "mysql"
-  "apache2"
-  "ssh"
-  "nginx"
-  "postfix"
-  "docker"
-  "cups"
-)
-
-# List of domains to block
+# List of domains to block EXAMPLE
 BLOCKED_DOMAINS=(
   "0rbit.com"
   "adclicksrv.com"
@@ -135,71 +143,61 @@ BLOCKED_DOMAINS=(
   "clickdisguise.com"       # Fraudulent click and ad campaigns
   "fraudulent-redirect.com" # Redirects to harmful or scam websites
 )
-# Declare log_enabled globally
-log_enabled=false # Default is false, logging is off initially
-# Log file
-LOGFILE="install-log.txt"
 
-# Check if the script is run as root
-if [[ $EUID -ne 0 ]]; then
-  echo -e "${RED}🚨 This script must be run as root! 🚨${RESET}\nRun it with:\n${CYAN}sudo ./install_kubuntu_extras.sh${RESET}"
-  exit 1
-fi
+# Define a global list of apps to be installed
+declare -a apps=(
+  "vlc"
+  "gimp"
+  "htop"
+  "inkscape"
+  "firefox"
+  "curl"
+  "git"
+  "ufw"
+  "kget"
+  "strawberry"
+  "gnome-disk-utility"
+  "trimage"
+  "xdm"
+  "krita"
+  "darktable"
+  "stacer"
+  "chromium"
+  "transmission-cli"
+  "clamav"
+  "wget"
+)
 
-# Prompt for confirmation to procced
-echo -e "${BLUE}Do you want to proceed with the installation? (y/n): ${RESET}"
-read -r choice
+# Define a list of services to disable
+services_to_disable=(
+  "rsyslog"
+  "systemd-journald"
+  "bluetooth"
+  "mysql"
+  "apache2"
+  "ssh"
+  "nginx"
+  "postfix"
+  "docker"
+  "cups"
+)
 
-if [[ "$choice" != "y" ]]; then
-  echo -e "${YELLOW}Installation aborted by the user.${RESET}"
-  exit 0
-fi
-
-# Prompt user for logging preference
-echo -e "${BLUE}Do you want to enable logging? (y/n) ${RESET}"
-read -r loging
-
-# Set global variable for logging
-if [[ "$loging" == "y" ]]; then
-  log_enabled=true
-  echo -e "${GREEN}Logging enabled. All output will be saved to "$LOGFILE".${RESET}"
-else
-  log_enabled=false
-  echo -e "${CYAN}Logging disabled. No log file will be saved.${RESET}"
-fi
-
-# Function to log messages with timestamp and colored output
+# Function: Logging with timestamp
 log() {
-  if [[ "$log_enabled" == false ]]; then
-    echo -e "\n${GREEN}$(date '+%Y-%m-%d %H:%M:%S') $1${RESET}" # Echo the message to user if logging is disabled
-  else
-    echo -e "\n${GREEN}$(date '+%Y-%m-%d %H:%M:%S') $1${RESET}" | tee -a "$LOGFILE"
-  fi
+  local message="$1"
+  local timestamp="$(date '+%Y-%m-%d %H:%M:%S')"
+  local clean_message=$(echo -e "$message" | sed 's/\x1b\[[0-9;]*m//g') # Remove colors for logs
+
+  echo -e "${GREEN}$timestamp $message${RESET}" # Terminal output
+  echo "$timestamp $clean_message" >>"$LOGFILE"
 }
 
-# Function to clear screen with countdown
-clear_screen() {
-  local COUNTDOWN_TIME=3 # Set the countdown time, for example, 5 seconds
-  for ((i = COUNTDOWN_TIME; i > 0; i--)); do
-    echo -ne "${YELLOW}Clearing screen in $i...${RESET}\r" # Countdown with carriage return to overwrite
-    tput el                                                # Clears to the end of the line
-    sleep 1
-  done
-
-  clear                                     # Clear the terminal screen
-  echo -e "${GREEN}Screen cleared!${RESET}" # Final message in green
-}
-# Check if dialog is installed
-if ! command -v dialog &>/dev/null; then
-  log "Installing dialog for the interactive menu..."
-  sudo apt install -y dialog
-fi
 # Function to disable a service with error checking
 disable_service() {
   local service_name="$1"
 
   # Check if the service is active or exists
-  echo "${CYAN}Checking if $service_name is active...${RESET}"
+  echo -e "${CYAN}Checking if $service_name is active...${RESET}"
   if systemctl list-units --full --all | grep -q "$service_name"; then
     echo -e "${CYAN}Disabling $service_name...${RESET}"
 
@@ -219,29 +217,44 @@ disable_service() {
   fi
 }
 
-# Function to display interactive checklist using dialog
-select_domains() {
-  log "Displaying domain selection menu..."
+# Function: Install a package if not installed
+install_package() {
+  local pkg="$1"
+  if ! dpkg -l | grep -qw "$pkg"; then
+    log "📦 Installing $pkg..."
+    sudo apt update && sudo apt install -y "$pkg"
+  else
+    log "✅ $pkg is already installed."
+  fi
+}
 
-  # Prepare options for dialog checklist
+# Function to show an interactive checklist and install selected packages
+install_packages() {
+  log "Displaying package selection menu..."
+
+  # Generate dialog options
   options=()
-  for domain in "${BLOCKED_DOMAINS[@]}"; do
-    options+=("$domain" "" "on") # "on" means pre-selected
+  for app in "${apps[@]}"; do
+    options+=("$app" "" off) # Each item: "<package>" "<description>" <on/off>
   done
 
-  # Run dialog checklist and capture selected domains
-  selected=$(dialog --separate-output --checklist "Select domains to block:" 22 76 16 "${options[@]}" 2>&1 >/dev/tty)
+  # Run checklist with dialog/whiptail
+  selected=$(dialog --separate-output --checklist "Select applications to install:" 22 76 16 "${options[@]}" 2>&1 >/dev/tty)
 
-  clear
   if [[ -z "$selected" ]]; then
-    log "No domains selected. Exiting."
-    exit 0
+    log "No packages selected. Exiting."
+    return 0 # Exit function without installing anything
   fi
 
   # Convert selected items into an array
-  SELECTED_DOMAINS=($selected)
-}
+  selected_apps=($selected)
 
+  # Install selected packages using install_package function
+  log "Installing selected packages..."
+  for pkg in "${selected_apps[@]}"; do
+    install_package "$pkg"
+  done
+}
 # Flush DNS cache based on available services
 flush_dns_cache() {
   if command -v systemctl &>/dev/null; then
@@ -260,12 +273,36 @@ flush_dns_cache() {
     log "Systemctl command not found. Unable to flush DNS cache."
   fi
 }
+# Function to display interactive checklist using dialog
+select_domains() {
+  log "Displaying domain selection menu..."
 
-# Function to block selected domains
-block_domains() {
+  # Prepare options for dialog checklist
+  options=()
+  for domain in "${BLOCKED_DOMAINS[@]}"; do
+    options+=("$domain" "" "on") # "on" means pre-selected
+  done
+
+  # Run dialog checklist and capture selected domains
+  selected=$(dialog --separate-output --checklist "Select domains to block:" 22 76 16 "${options[@]}" 2>&1 >/dev/tty)
+
+  clear # Clear screen after selection
+
+  if [[ -z "$selected" ]]; then
+    log "No domains selected. Exiting."
+    exit 0
+  fi
+
+  # Convert selected items into an array
+  SELECTED_DOMAINS=($selected)
+}
+# Function to block selected domains by updating /etc/hosts
+update_hosts() {
+  select_domains
   log "Blocking selected domains..."
 
   for domain in "${SELECTED_DOMAINS[@]}"; do
+    # Check if domain is already blocked
     if ! grep -q "$domain" /etc/hosts; then
       echo "127.0.0.1 $domain" | sudo tee -a /etc/hosts >/dev/null
       echo "127.0.0.1 www.$domain" | sudo tee -a /etc/hosts >/dev/null
@@ -275,73 +312,14 @@ block_domains() {
     fi
   done
 
-  # Flush DNS cache
+  # Flush DNS cache to apply changes
   flush_dns_cache
 }
-
-# Check if dialog is installed
-if ! command -v dialog &>/dev/null; then
-  log "Installing dialog for the interactive menu..."
-  sudo apt install -y dialog
-fi
-
-# Function to safely disable systemd-journald and its related services
-disable_persistent_logging() {
-  # Define the services and sockets involved
-  local services=("systemd-journald.service" "systemd-journald.socket" "systemd-journald-dev-log.socket" "systemd-journal-flush.service")
-
-  # Loop through the services and try to stop and disable them
-  for service in "${services[@]}"; do
-    echo -e "${CYAN}Stopping $service...${RESET}"
-    sudo systemctl stop "$service" 2>/dev/null
-
-    # Check if the stop command succeeded
-    if [[ $? -ne 0 ]]; then
-      echo -e "${CYAN}Failed to stop $service. Continuing...${RESET}"
-    else
-      echo -e "${GREEN}$service stopped successfully.${RESET}"
-    fi
-
-    echo -e "${CYAN}Disabling $service...${RESET}"
-    sudo systemctl disable "$service" 2>/dev/null
-
-    # Check if the disable command succeeded
-    if [[ $? -ne 0 ]]; then
-      echo -e "${CYAN}Failed to disable $service. Continuing...${RESET}"
-    else
-      echo -e "${GREEN}$service disabled successfully.${RESET}"
-    fi
-
-    # Mask the services to prevent automatic activation
-    echo -e "${CYAN}Masking $service...${RESET}"
-    sudo systemctl mask "$service" 2>/dev/null
-
-    # Check if the mask command succeeded
-    if [[ $? -ne 0 ]]; then
-      echo -e "${CYAN}Failed to mask $service. Continuing...${RESET}"
-    else
-      echo -e "${GREEN}$service masked successfully.${RESET}"
-    fi
-
-    # Check if the service is still active
-    if systemctl is-active --quiet "$service"; then
-      echo -e "${CYAN}$service is still active. Investigating further.${RESET}"
-    else
-      echo -e "${GREEN}$service has been successfully stopped, disabled, and masked.${RESET}"
-    fi
-  done
-
-  # Reload systemd configuration to apply the changes
-  echo -e "${CYAN}Reloading systemd configuration...${RESET}"
-  sudo systemctl daemon-reload
-
-  # Check if systemd reload was successful
-  if [[ $? -ne 0 ]]; then
-    echo -e "${RED}Failed to reload systemd configuration. Please check manually.${RESET}"
-  else
-    echo -e "${GREEN}systemd configuration reloaded successfully.${RESET}"
-  fi
-  log "Process complete"
+# Install Kubuntu restricted extras
+install_kubuntu_extras() {
+  clear # Clear the screen before exiting
+  log "Installing Kubuntu restricted extras..."
+  sudo apt install -y kubuntu-restricted-extras 2>/dev/null | tee -a "$LOGFILE"
 }
 
 # Install VS Code and required dependencies
@@ -352,131 +330,167 @@ install_vscode() {
   sudo apt install -y code 2>/dev/null
 }
 
-# Install VS Code extensions
-install_vscode_extensions() {
-  local extension_id="ms-python.python" # Replace with actual extension ID
-  log "Installing VS Code Extensions..."
-  code --no-sandbox --user-data-dir="$HOME/.vscode-data" --install-extension "$extension_id" --force
-}
+# Function to install a single extension with retries
+install_extension() {
+  local extension="$1"
+  local attempts=0
+  local MAX_RETRIES=3
+  local COUNTDOWN_TIME=5 # Countdown time for retry
 
-# Function to show an interactive checklist and install selected packages
-install_packages() {
-  log "Displaying package selection menu..."
+  # Loop for retry attempts
+  while ((attempts < MAX_RETRIES)); do
+    log "Installing $extension (Attempt $((attempts + 1))/$MAX_RETRIES)..."
 
-  # Generate dialog options
-  options=()
-  for app in "${apps[@]}"; do
-    options+=("$app" "" off) # Each item: "<package>" "<description>" <on/off>
+    # Try installing the extension
+    if code --no-sandbox --user-data-dir="$HOME/.vscode-data" --install-extension "$extension" --force; then
+      log "✅ Successfully installed: $extension"
+      return 0
+    else
+      log "⚠️ Failed to install: $extension. Retrying in $COUNTDOWN_TIME seconds..."
+
+      # Countdown before retrying
+      for ((i = COUNTDOWN_TIME; i > 0; i--)); do
+        echo -ne "⏳ Retrying in $i... \r"
+        sleep 1
+      done
+
+      # Increment attempt count and retry
+      attempts=$((attempts + 1))
+    fi
   done
 
-  # Run checklist with dialog/whiptail
-  selected=$(dialog --separate-output --checklist "Select applications to install:" 22 76 16 "${options[@]}" 2>&1 >/dev/tty)
-
-  clear
-  if [[ -z "$selected" ]]; then
-    log "No packages selected. Exiting."
-    exit 0
-  fi
-
-  # Convert selected items into an array
-  selected_apps=($selected)
-
-  # Install selected packages
-  log "Installing selected packages..."
-  sudo apt install -y "${selected_apps[@]}" 2>/dev/null | tee -a "$LOGFILE"
+  # If all attempts fail, log failure
+  log "❌ Failed to install: $extension after $MAX_RETRIES attempts. Moving on to the next extension..."
 }
 
-# Update package lists and Upgrade the system
-update_upgrade() {
-  log "Updating package lists..."
-  sudo apt update 2>/dev/null | tee -a "$LOGFILE"
-  log "Upgrading system packages..."
-  sudo apt upgrade -y 2>/dev/null | tee -a "$LOGFILE"
-}
+# Function to display the list of extensions and install them
+install_vscode_extensions() {
+  # Ask the user if they want to install VSCode before proceeding
 
-# Install Kubuntu restricted extras
-install_kubuntu_extras() {
-  log "Installing Kubuntu restricted extras..."
-  sudo apt install -y kubuntu-restricted-extras 2>/dev/null | tee -a "$LOGFILE"
-}
-
-# Clean up unnecessary packages
-clean_packages() {
-  log "Cleaning up unnecessary packages..."
-  sudo apt autoremove -y 2>/dev/null | tee -a "$LOGFILE"
-  sudo apt autoclean 2>/dev/null | tee -a "$LOGFILE"
-}
-
-# Function to allow HTTP traffic on port 80
-allow_http() {
-  echo -e "${GREEN}Allowing HTTP (Port 80)...${RESET}"
-  sudo ufw allow 80/tcp
-}
-
-# Function to allow HTTPS traffic on port 443
-allow_https() {
-  echo -e "${GREEN}Allowing HTTPS (Port 443)...${RESET}"
-  sudo ufw allow 443/tcp
-}
-
-# Function to enable the firewall
-enable_firewall() {
-  echo -e "${GREEN}Enabling the firewall...${RESET}"
-  sudo ufw enable
-}
-
-# Function to set default firewall policies
-set_default_policies() {
-  echo -e "${GREEN}Setting default firewall policies...${RESET}"
-  sudo ufw default deny incoming
-  sudo ufw default allow outgoing
-}
-
-# Function to check the firewall status
-check_firewall_status() {
-  echo -e "${GREEN}Checking firewall status...${RESET}"
-  sudo ufw status
-}
-
-# Main function to apply all firewall settings
-configure_firewall() {
-  # Ask user if they want to activate the firewall
-  dialog --title "Firewall Configuration" --yesno "Do you want to activate the firewall?" 7 60
-  response=$?
-
-  if [ $response -eq 0 ]; then
-    log "Activating firewall..."
-    allow_http
-    allow_https
-    enable_firewall
-    set_default_policies
-    check_firewall_status
+  read -p "Do you want to install Visual Studio Code? (y/n): " install_choice
+  if [[ "$install_choice" == "y" || "$install_choice" == "Y" ]]; then
+    install_vscode
   else
-    log "Firewall activation skipped."
+    log "❌ User chose not to install Visual Studio Code. Exiting."
+    return 0
   fi
 
+  log "You will now be presented with a list of extensions to install."
+
+  # Create checkboxes for dialog UI
+  checkboxes=""
+  for extension_id in "${extensions[@]}"; do
+    checkboxes="$checkboxes $extension_id $extension_id off"
+  done
+
+  # Use dialog to allow users to select extensions
+  selected_extensions=$(dialog --title "VS Code Extension Installation" \
+    --checklist "Select extensions to install" 20 70 15 \
+    $checkboxes 2>&1 >/dev/tty)
+
+  # If no selection is made, log and do nothing
+  if [[ -z "$selected_extensions" ]]; then
+    log "No extensions selected. Skipping installation."
+    return 0 # Exit function without installing anything
+  fi
+
+  # Loop through selected extensions and install each one
+  for extension_id in $selected_extensions; do
+    install_extension "$extension_id"
+  done
+
+  log "🔍 Installation process completed."
 }
 
-# Loop through and disable each service
-disable_all_services() {
+# Function: Check Disk Space & Memory
+check_system_health() {
+  log "💾 Checking system disk space and memory..."
+  df -h | grep "^/dev" | tee -a "$LOGFILE"
+  free -h | tee -a "$LOGFILE"
+}
+
+# Function: Optimize System
+optimize_system() {
+  log "🚀 Optimizing system..."
+  sudo apt autoremove -y && sudo apt autoclean -y
+  log "✅ System optimized!"
+  clear # Clear the screen before exiting
+  check_system_health
+}
+
+# Function to disable selected services using dialog
+manage_services() {
+  # Create checkboxes for dialog UI
+  checkboxes=""
   for service in "${services_to_disable[@]}"; do
+    checkboxes="$checkboxes $service $service off"
+  done
+
+  # Use dialog to allow users to select services to disable
+  selected_services=$(dialog --title "Service Disable Selection" \
+    --checklist "Select services to disable" 20 70 15 \
+    $checkboxes 2>&1 >/dev/tty)
+
+  clear # Clear the dialog screen
+
+  # If no selection is made, log and do nothing
+  if [[ -z "$selected_services" ]]; then
+    echo -e "${YELLOW}No services selected. Skipping disable process.${RESET}"
+    return 0 # Exit function without disabling anything
+  fi
+
+  # Loop through selected services and disable each one
+  for service in $selected_services; do
     disable_service "$service"
   done
+
+  echo -e "${GREEN}Service disabling process completed.${RESET}"
 }
 
-# clear_screen
-update_upgrade
-install_kubuntu_extras
-install_packages
-clean_packages
-configure_firewall
-select_domains
-block_domains
-# disable_persistent_logging
-# disable_all_services
-install_vscode
-install_vscode_extensions
+# Function: Run Everything in One Step
+run_all_tasks() {
+  log "🚀 Running all tasks in sequence..."
 
-log "============ Setup complete ============"
+  manage_services
+  install_packages
+  install_kubuntu_extras
+  update_hosts
+  install_vscode_extensions
+  optimize_system
 
-exit 0
+  log "✅ All tasks completed!"
+}
+
+# Function: Show Main Menu
+show_menu() {
+  # Automatically clear screen before each function exits
+  #   trap 'clear' EXIT
+  install_package "dialog" # Ensure dialog is installed
+
+  CHOICE=$(dialog --title "CUTE Kubuntu Extras Script" --menu "Choose an action:" 20 60 7 \
+    1 "Run All Tasks (Recommended)" \
+    2 "Install packages" \
+    3 "Install kubuntu extras" \
+    4 "Update /etc/hosts" \
+    5 "Install VS Code + Extensions" \
+    6 "Optimize System" \
+    7 "Exit" \
+    3>&1 1>&2 2>&3)
+
+  case $CHOICE in
+    1) run_all_tasks ;;
+    2) install_packages ;;
+    3) install_kubuntu_extras ;;
+    4) update_hosts ;;
+    5) install_vscode_extensions ;;
+    6) optimize_system ;;
+    7)
+      log "🚀 Exiting script."
+      exit 0
+      ;;
+  esac
+}
+
+# Main Execution
+log "🚀 Starting system CUTE utility script..."
+show_menu
