@@ -217,12 +217,19 @@ disable_service() {
   fi
 }
 
-# Function: Install a package if not installed
 install_package() {
   local pkg="$1"
-  if ! dpkg -l | grep -qw "$pkg"; then
+
+  # Check if package is installed correctly
+  if ! dpkg-query -W -f='${Status}' "$pkg" 2>/dev/null | grep -q "install ok installed"; then
     log "📦 Installing $pkg..."
-    sudo apt update && sudo apt install -y "$pkg"
+
+    # Suppress errors, force "yes", and prevent interactive prompts
+    if sudo apt update -qq && sudo DEBIAN_FRONTEND=noninteractive apt install -y "$pkg" &>/dev/null; then
+      log "✅ $pkg successfully installed."
+    else
+      log "⚠️ Failed to install $pkg, but continuing..."
+    fi
   else
     log "✅ $pkg is already installed."
   fi
@@ -465,7 +472,6 @@ run_all_tasks() {
 show_menu() {
   # Automatically clear screen before each function exits
   #   trap 'clear' EXIT
-  install_package "dialog" # Ensure dialog is installed
 
   CHOICE=$(dialog --title "CUTE Kubuntu Extras Script" --menu "Choose an action:" 20 60 7 \
     1 "Run All Tasks (Recommended)" \
@@ -493,4 +499,6 @@ show_menu() {
 
 # Main Execution
 log "🚀 Starting system CUTE utility script..."
+install_package "dialog" # Ensure dialog is installed
+
 show_menu
