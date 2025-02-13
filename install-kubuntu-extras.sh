@@ -166,6 +166,9 @@ declare -a apps=(
   "transmission-cli"
   "clamav"
   "wget"
+  "exfat-fuse"
+  "exfat-utils"
+  "net-tools"
 )
 
 # Define a list of services to disable
@@ -454,6 +457,52 @@ manage_services() {
   echo -e "${GREEN}Service disabling process completed.${RESET}"
 }
 
+change_dns() {
+    echo "Do you want to change DNS? (y/n)"
+    read -r choice
+    if [[ "$choice" =~ ^[Yy]$ ]]; then
+        echo "Select a DNS provider:"
+        echo "1) Google (8.8.8.8, 8.8.4.4)"
+        echo "2) Cloudflare (1.1.1.1, 1.0.0.1)"
+        echo "3) OpenDNS (208.67.222.222, 208.67.220.220)"
+        echo "4) Quad9 (9.9.9.9, 149.112.112.112)"
+        echo "5) Custom DNS"
+
+        read -r dns_choice
+        case $dns_choice in
+            1) dns1="8.8.8.8"; dns2="8.8.4.4";;
+            2) dns1="1.1.1.1"; dns2="1.0.0.1";;
+            3) dns1="208.67.222.222"; dns2="208.67.220.220";;
+            4) dns1="9.9.9.9"; dns2="149.112.112.112";;
+            5)
+                echo "Enter primary DNS:"
+                read -r dns1
+                echo "Enter secondary DNS:"
+                read -r dns2
+                ;;
+            *) echo "Invalid choice. Exiting."; return 1;;
+        esac
+
+        log "Changing DNS to $dns1 and $dns2..."
+
+        # Get active connection name
+        active_con=$(nmcli -t -f NAME c show --active | head -n 1)
+
+        if [[ -z "$active_con" ]]; then
+            log "No active connection found. Exiting."
+            return 1
+        fi
+
+        # Apply DNS settings without reconnecting
+        sudo nmcli con mod "$active_con" ipv4.dns "$dns1 $dns2"
+        sudo nmcli networking off && sudo nmcli networking on  # Restart networking instead of reconnecting
+
+        log "DNS updated successfully."
+    else
+        log "Skipping DNS change."
+    fi
+}
+
 # Function: Run Everything in One Step
 run_all_tasks() {
   log "🚀 Running all tasks in sequence..."
@@ -463,8 +512,8 @@ run_all_tasks() {
   install_kubuntu_extras
   update_hosts
   install_vscode_extensions
+  change_dns
   optimize_system
-
   log "✅ All tasks completed!"
 }
 
