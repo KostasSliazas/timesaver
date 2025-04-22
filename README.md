@@ -29,15 +29,4 @@ Now, you’re ready to run the script! In your terminal, execute the following c
 ```bash
 sudo ./install-kubuntu-extras.sh
 ```
-And there you go! 🚀 You might need to enter your password again for the script to execute with elevated permissions.
-📝 Usage Instructions
-
-Once the script is running, you’ll see an interactive menu or prompt to guide you through its options. Feel free to follow the prompts, and enjoy the magical results! 🎨
-📋 Additional Info
-
-If you ever need more details about how this script works, or if you need troubleshooting assistance, feel free to:
-
-    Check the code for further customization
-    Reach out via issues or discussions
-
-💖 Enjoy Your Cute Bash Script! 💖
+And there you go! You might need to enter your password again for the script to execute with elevated permissions.
