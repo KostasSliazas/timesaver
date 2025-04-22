@@ -1,6 +1,6 @@
-# 🎉 **Cute Bash Script README** 🎉
+#  **Cute Bash Script README** 
 
-## 🛠️ **Installation**
+## 🛠 **Installation**
 
 To get started, follow these simple steps:
 
@@ -22,7 +22,7 @@ Before running the script, make sure it’s executable. Open your terminal and r
 ```bash
 sudo chmod +x install-kubuntu-extras.sh
 ```
-This command makes the script executable on your system. 🌈 You may be prompted for your password to grant the necessary permissions.
+This command makes the script executable on your system. You may be prompted for your password to grant the necessary permissions.
 ### 3. Run the Script
 
 Now, you’re ready to run the script! In your terminal, execute the following command:
@@ -41,6 +41,3 @@ If you ever need more details about how this script works, or if you need troubl
     Reach out via issues or discussions
 
 💖 Enjoy Your Cute Bash Script! 💖
-
-Feel free to share it with your friends, and don’t forget to leave a star if you love it! 🌟
-
